@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <link rel="manifest" href="manifest.json">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#4f46e5">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ProjectTool">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <title>綜合項目管家</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Corrected FullCalendar CSS Link -->
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/main.min.css" rel="stylesheet" />
+    <script src="https://unpkg.com/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+    <!-- Corrected html-docx-js Script Link -->
+    <script src="https://cdn.jsdelivr.net/npm/html-docx-js@0.4.1/dist/html-docx.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <button id="sidebarToggle" class="sidebar-toggle">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            </button>
+        </div>
+        <div class="search-container">
+            <input type="search" id="globalSearchInput" placeholder="🔍 全局搜索...">
+        </div>
+        <h2>目前專案</h2>
+        <select id="projectSelector"></select>
+        <nav>
+            <a href="#" data-view="dashboard" class="sidebar-link active"><span class="sidebar-icon">🏠</span> 主控台</a>
+            <a href="#" data-view="myDayView" class="sidebar-link"><span class="sidebar-icon">☀️</span> 我的一天</a>
+            <a href="#" data-view="taskBoard" class="sidebar-link"><span class="sidebar-icon">🗂️</span> 任務看板</a>
+            <a href="#" data-view="reportsView" class="sidebar-link"><span class="sidebar-icon">📊</span> 報告</a>
+            <a href="#" data-view="fileCenter" class="sidebar-link"><span class="sidebar-icon">📂</span> 檔案中心</a>
+            <a href="#" data-view="meetingRecords" class="sidebar-link"><span class="sidebar-icon">🗒️</span> 會議記錄</a>
+            <a href="#" data-view="designBrief" class="sidebar-link"><span class="sidebar-icon">🎨</span> 設計簡報</a>
+            <a href="#" data-view="contacts" class="sidebar-link"><span class="sidebar-icon">👥</span> 聯絡人</a>
+            <a href="#" data-view="projectManagement" class="sidebar-link"><span class="sidebar-icon">🗂️</span> 專案管理</a>
+            <a href="#" data-view="calendarView" class="sidebar-link"><span class="sidebar-icon">📅</span> 專案日曆</a>
+            <a href="#" data-view="dependencyView" class="sidebar-link"><span class="sidebar-icon">🔗</span> 依賴關係</a>
+            <a href="#" id="importData" class="sidebar-link"><span class="sidebar-icon">📥</span> 匯入數據</a>
+            <a href="#" id="exportData" class="sidebar-link"><span class="sidebar-icon">📤</span> 匯出數據</a>
+            <a href="#" id="resetData" class="sidebar-link"><span class="sidebar-icon">🗑️</span> 重置所有數據</a>
+            <a href="#" id="settings" class="sidebar-link"><span class="sidebar-icon">⚙️</span> 設定</a>
+        </nav>
+        <div class="command-palette-hint">
+            按 <kbd>Ctrl</kbd> + <kbd>K</kbd> 開啟指令面板
+        </div>
+    </div>
+
+    <div class="main-content" id="mainContent">
+        <div id="searchResultsView" class="view">
+            <h1 class="view-title">搜索結果</h1>
+            <div id="searchResultsContainer">
+                <p>請在側邊欄的搜索框中輸入關鍵字以開始搜索。</p>
+            </div>
+        </div>
+
+        <div id="myDayView" class="view">
+            <h1 class="view-title">我的一天</h1>
+            <div class="my-day-controls">
+                <button id="suggestFocusButton" class="btn btn-primary">🤖 建議今日焦點</button>
+            </div>
+            <div id="myDayContainer"></div>
+        </div>
+        
+        <div id="reportsView" class="view">
+            <h1 class="view-title">專案報告</h1>
+            <div class="card">
+                <h2 class="section-title">AI 每週反思</h2>
+                <div id="weeklyReflectionContainer">
+                    <p>分析您過去一週的工作效率、瓶頸和成就。</p>
+                    <button id="generateReflectionButton" class="btn btn-primary" style="margin-top: 1rem;">產生本週反思</button>
+                </div>
+            </div>
+            <div class="grid grid-cols-2">
+                <div class="card">
+                    <h3>任務狀態分佈</h3>
+                    <canvas id="statusPieChart"></canvas>
+                </div>
+                <div class="card">
+                    <h3>績效指標</h3>
+                    <div id="performanceMetrics"></div>
+                </div>
+            </div>
+            <div class="card">
+                <h3>每月完成任務數量</h3>
+                <canvas id="monthlyCompletionChart"></canvas>
+            </div>
+        </div>
+
+        <div id="dashboard" class="view active">
+            <h1 class="view-title">主控台</h1>
+            <div id="dashboard-toggle-container"></div>
+            <div id="dashboard-content">
+                <!-- Morning Briefing, EOD Review, or Standard Dashboard will be injected here -->
+            </div>
+        </div>
+
+        <div id="taskBoard" class="view">
+            <h1 class="view-title">任務看板</h1>
+            <div class="task-controls">
+                <select id="dependencyFilter" class="status-select">
+                    <option value="">所有任務</option>
+                    <option value="blocked">被阻擋的任務</option>
+                    <option value="ready">可開始的任務</option>
+                    <option value="has-dependencies">有依賴的任務</option>
+                </select>
+                <select id="assigneeFilter" class="status-select">
+                    <option value="">所有負責人</option>
+                </select>
+                <button id="addNewTask" class="btn btn-primary">新增紀錄</button>
+                <button id="createFollowUpChain" class="btn btn-secondary">建立追蹤鏈</button>
+            </div>
+            <div id="kanban-board" class="kanban-board"></div>
+        </div>
+
+        <div id="fileCenter" class="view">
+            <h1 class="view-title">檔案中心</h1>
+            <button id="addNewFile" class="btn btn-primary" style="margin-bottom: 2rem;">加入檔案</button>
+            <div class="card">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #f9fafb;">
+                            <th style="padding: 0.75rem; text-align: left; border-bottom: 1px solid #e5e7eb;">檔案名稱</th>
+                            <th style="padding: 0.75rem; text-align: left; border-bottom: 1px solid #e5e7eb;">分類</th>
+                            <th style="padding: 0.75rem; text-align: left; border-bottom: 1px solid #e5e7eb;">連結</th>
+                            <th style="padding: 0.75rem; text-align: left; border-bottom: 1px solid #e5e7eb;">動作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="fileTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="meetingRecords" class="view">
+            <h1 class="view-title">會議記錄</h1>
+            <button id="addNewMeeting" class="btn btn-primary" style="margin-bottom: 2rem;">新增會議</button>
+            <div id="meeting-container"></div>
+        </div>
+
+        <div id="designBrief" class="view">
+            <h1 class="view-title">設計簡報</h1>
+            <div id="brief-container"></div>
+        </div>
+
+        <div id="contacts" class="view">
+            <h1 class="view-title">聯絡人</h1>
+            <button id="addNewContact" class="btn btn-primary" style="margin-bottom: 2rem;">新增聯絡人</button>
+            <div id="contacts-grid" class="grid grid-cols-2"></div>
+        </div>
+
+        <div id="projectManagement" class="view">
+            <h1 class="view-title">專案管理</h1>
+            <div class="card" style="margin-bottom: 2rem;">
+                <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
+                    <input type="text" id="newProjectName" placeholder="輸入新專案名稱" style="flex: 1; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                    <button id="addProject" class="btn btn-primary">新增專案</button>
+                </div>
+                <div class="view-toggle-buttons">
+                    <button id="showActiveProjects" class="btn btn-secondary active">顯示進行中專案</button>
+                    <button id="showArchivedProjects" class="btn btn-secondary">顯示已封存專案</button>
+                </div>
+            </div>
+            <div id="projects-list"></div>
+        </div>
+
+        <div id="calendarView" class="view">
+            <h1 class="view-title">📅 專案日曆</h1>
+            <div class="calendar-toolbar">
+                <div class="calendar-filters">
+                    <label>
+                        專案篩選:
+                        <select id="calendarProjectFilter">
+                            <option value="all">全部專案</option>
+                        </select>
+                    </label>
+                    <label>
+                        狀態篩選:
+                        <select id="calendarStatusFilter">
+                            <option value="all">全部狀態</option>
+                            <option value="待辦">待辦</option>
+                            <option value="內容準備中">內容準備中</option>
+                            <option value="設計中">設計中</option>
+                            <option value="待審批">待審批</option>
+                            <option value="待製作">待製作</option>
+                            <option value="已完成">已完成</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="calendar-info">
+                    💡 <strong>提示:</strong> 在任務看板新增任務以在日曆中顯示。可拖拽任務重新排程。
+                </div>
+            </div>
+            <div id="calendar-container">
+                <div id="calendar"></div>
+            </div>
+        </div>
+
+        <div id="dependencyView" class="view">
+            <h1 class="view-title">🔗 依賴關係管理</h1>
+            <div class="task-controls">
+                <button id="validateAllDependencies" class="btn btn-primary">驗證所有依賴</button>
+                <button id="autoScheduleAll" class="btn btn-secondary">自動排程</button>
+                <button id="detectConflicts" class="btn btn-warning">檢測衝突</button>
+            </div>
+            
+            <div class="grid grid-cols-2 mb-8">
+                <div class="card">
+                    <h3 style="font-weight: 700; margin-bottom: 1rem;">依賴統計</h3>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="number" id="totalTasks">0</div>
+                            <div class="label">總任務數</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="number" id="tasksWithDeps">0</div>
+                            <div class="label">有依賴關係</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="number" id="blockedTasks">0</div>
+                            <div class="label">被阻擋任務</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="number" id="readyTasks">0</div>
+                            <div class="label">可開始任務</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 style="font-weight: 700; margin-bottom: 1rem;">依賴關係圖</h3>
+                    <div id="dependencyMatrix" style="max-height: 300px; overflow-y: auto;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="taskModal" class="modal-overlay">
+        <div class="modal-content large-modal">
+            <div class="modal-header">
+                <h2 id="taskModalTitle">新增紀錄</h2>
+                <button class="close-btn">&times;</button>
+            </div>
+            <form id="taskForm">
+                <input type="hidden" id="editingTaskId">
+                
+                <div class="form-tabs">
+                    <button type="button" class="tab-btn active" data-tab="basic">基本資訊</button>
+                    <button type="button" class="tab-btn" data-tab="dependencies">依賴關係</button>
+                    <button type="button" class="tab-btn" data-tab="actionPlan">行動計畫</button>
+                    <button type="button" class="tab-btn" data-tab="updates">追蹤更新</button>
+                    <button type="button" class="tab-btn" data-tab="followup">追蹤設定</button>
+                </div>
+                
+                <div class="tab-content active" id="basic-tab">
+                    <div class="form-group">
+                        <label for="taskName">文件/任務名稱</label>
+                        <div class="input-with-button">
+                            <input type="text" id="taskName" required>
+                            <button type="button" id="autofillTaskButton" class="btn btn-primary btn-small" title="使用 AI 自動填寫">✨</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="taskPurpose">用途</label>
+                        <input type="text" id="taskPurpose">
+                    </div>
+                    <div class="form-group">
+                        <label for="taskDescription">詳細文案 (可選)</label>
+                        <textarea id="taskDescription" rows="3"></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="taskAssignee">負責人</label>
+                            <select id="taskAssignee"></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="taskPriority">優先級</label>
+                            <select id="taskPriority">
+                                <option value="low">低</option>
+                                <option value="medium">中</option>
+                                <option value="high">高</option>
+                                <option value="urgent">緊急</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="taskStartDate">開始日期</label>
+                            <input type="date" id="taskStartDate">
+                        </div>
+                        <div class="form-group">
+                            <label for="taskDueDate">到期日</label>
+                            <input type="date" id="taskDueDate">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="taskStatus">狀態</label>
+                            <select id="taskStatus">
+                                <option value="待辦">待辦</option>
+                                <option value="內容準備中">內容準備中</option>
+                                <option value="設計中">設計中</option>
+                                <option value="待審批">待審批</option>
+                                <option value="待製作">待製作</option>
+                                <option value="已完成">已完成</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="taskTimeEstimate">預計耗時 (AI)</label>
+                            <div class="input-with-button">
+                                <input type="text" id="taskTimeEstimate" placeholder="點擊按鈕估算...">
+                                <button type="button" id="estimateTimeButton" class="btn btn-secondary btn-small" title="使用 AI 估算時間">⏱️</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>風險評估 (AI)</label>
+                        <div class="risk-assessment-container">
+                            <div id="riskAssessmentResult" class="risk-assessment-result">點擊按鈕進行評估...</div>
+                            <button type="button" id="assessRiskButton" class="btn btn-secondary btn-small">評估風險</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="dependencies-tab">
+                    <div class="form-group">
+                        <label>此任務依賴於：</label>
+                        <div id="dependencySelector" class="dependency-selector">
+                            </div>
+                        <button type="button" id="addDependency" class="btn btn-small" style="margin-top: 0.5rem;">+ 添加依賴</button>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="bufferDays">緩衝天數</label>
+                        <input type="number" id="bufferDays" min="0" max="30" value="0">
+                        <small style="color: #6b7280;">在依賴任務完成後的額外等待天數</small>
+                    </div>
+                    
+                    <div class="dependency-suggestions">
+                        <h4 style="margin-bottom: 0.5rem;">建議的依賴關係：</h4>
+                        <div id="dependencySuggestions"></div>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="actionPlan-tab">
+                    <div class="action-plan-controls">
+                        <button type="button" id="suggestActionPlanButton" class="btn btn-primary">🤖 建議行動計畫</button>
+                    </div>
+                    <div id="actionPlanContainer" class="action-plan-container">
+                        <p>點擊按鈕以使用 AI 生成建議的步驟清單。</p>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="updates-tab">
+                    <div class="form-group">
+                        <label for="taskNextAction">下一步行動</label>
+                        <input type="text" id="taskNextAction" placeholder="定義任務的下一個具體步驟...">
+                    </div>
+                    <div class="form-group">
+                        <label for="taskNewUpdate">新增進度更新 (可選)</label>
+                        <textarea id="taskNewUpdate" rows="2" placeholder="記錄您剛剛完成的工作..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>歷史紀錄</label>
+                        <div id="taskHistoryLog" class="history-log">
+                            <p>尚無歷史紀錄。</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="followup-tab">
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="enableFollowUp"> 啟用自動追蹤
+                        </label>
+                    </div>
+                    
+                    <div id="followUpSettings" class="follow-up-settings" style="display: none;">
+                        <div class="follow-up-item">
+                            <label>第一次追蹤 (天數)</label>
+                            <input type="number" id="followUp1Days" value="3" min="1">
+                            <input type="text" id="followUp1Action" placeholder="追蹤動作" value="溫和提醒">
+                        </div>
+                        <div class="follow-up-item">
+                            <label>第二次追蹤 (天數)</label>
+                            <input type="number" id="followUp2Days" value="7" min="1">
+                            <input type="text" id="followUp2Action" placeholder="追蹤動作" value="正式跟進">
+                        </div>
+                        <div class="follow-up-item">
+                            <label>第三次追蹤 (天數)</label>
+                            <input type="number" id="followUp3Days" value="10" min="1">
+                            <input type="text" id="followUp3Action" placeholder="追蹤動作" value="上報主管">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary close-btn">取消</button>
+                    <button type="submit" class="btn btn-primary">儲存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="fileModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📁 新增檔案</h2>
+                <button class="close-btn">&times;</button>
+            </div>
+            <form id="fileForm">
+                <input type="hidden" id="editingFileId">
+                <div class="form-group">
+                    <label for="fileName">檔案名稱</label>
+                    <input type="text" id="fileName" required placeholder="請輸入檔案名稱">
+                </div>
+                <div class="form-group">
+                    <label for="fileCategory">分類</label>
+                    <input type="text" id="fileCategory" placeholder="例如：文件、圖片、影片">
+                </div>
+                <div class="form-group">
+                    <label for="fileUrl">雲端連結 (URL)</label>
+                    <input type="url" id="fileUrl" placeholder="https://">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary close-btn">取消</button>
+                    <button type="submit" class="btn btn-primary">儲存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="meetingModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📝 新增會議記錄</h2>
+                <button class="close-btn">&times;</button>
+            </div>
+            <form id="meetingForm">
+                <input type="hidden" id="editingMeetingId">
+                <div class="form-group">
+                    <label for="meetingDate">會議日期</label>
+                    <input type="date" id="meetingDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="meetingAttendees">與會者</label>
+                    <input type="text" id="meetingAttendees" placeholder="請輸入與會者姓名">
+                </div>
+                <div class="form-group">
+                    <label for="meetingNotes">會議重點 / 決策事項</label>
+                    <textarea id="meetingNotes" rows="4" placeholder="記錄會議重點和決策事項..."></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary close-btn">關閉</button>
+                    <button type="submit" class="btn btn-primary">儲存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="contactModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>👥 加入聯絡人</h2>
+                <button class="close-btn">&times;</button>
+            </div>
+            <form id="contactForm">
+                <input type="hidden" id="editingContactId">
+                <div class="form-group">
+                    <label for="contactName">姓名</label>
+                    <input type="text" id="contactName" required placeholder="請輸入聯絡人姓名">
+                </div>
+                <div class="form-group">
+                    <label for="contactRole">角色</label>
+                    <input type="text" id="contactRole" placeholder="例如：主管、同事、客戶">
+                </div>
+                <div class="form-group">
+                    <label for="contactInfo">聯絡方式</label>
+                    <input type="text" id="contactInfo" placeholder="電話、Email 或其他聯絡方式">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary close-btn">取消</button>
+                    <button type="submit" class="btn btn-primary">儲存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="conflictModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚠️ 依賴衝突檢測</h2>
+                <button class="close-btn">&times;</button>
+            </div>
+            <div id="conflictList" class="conflict-list"></div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary close-btn">關閉</button>
+                <button type="button" id="autoResolveConflicts" class="btn btn-primary">自動解決</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="settingsModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚙️ 設定</h2>
+                <button class="close-btn">&times;</button>
+            </div>
+            <div style="padding: 2rem;">
+                <div class="form-group">
+                    <label for="apiKey">Groq API Key</label>
+                    <input type="password" id="apiKey" placeholder="在此貼上您的 Groq API Key">
+                    <small>您的 API Key 將安全地儲存在您本機的瀏覽器中。</small>
+                </div>
+                <div class="modal-actions" style="padding: 0; border: none;">
+                    <button type="button" class="btn btn-secondary close-btn">取消</button>
+                    <button type="button" id="saveApiKey" class="btn btn-primary">儲存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="commandPaletteModal" class="modal-overlay command-palette-overlay">
+        <div class="modal-content command-palette-content">
+            <input type="text" id="commandPaletteInput" placeholder="輸入指令或搜索...">
+            <div id="commandPaletteResults"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
