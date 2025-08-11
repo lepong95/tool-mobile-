@@ -4333,4 +4333,95 @@ function showInstallPromotion() {
   // You can add a custom install button here
   console.log('PWA can be installed');
 }
+// Mobile Menu Functionality
+function initializeMobileMenu() {
+  const mobileToggle = document.getElementById('mobileMenuToggle');
+  const sidebar = document.getElementById('sidebar');
+  const mobileOverlay = document.getElementById('mobileOverlay');
+  
+  if (!mobileToggle || !sidebar || !mobileOverlay) return;
+  
+  // Toggle mobile menu
+  mobileToggle.addEventListener('click', function() {
+    const isOpen = sidebar.classList.contains('mobile-open');
+    
+    if (isOpen) {
+      closeMobileMenu();
+    } else {
+      openMobileMenu();
+    }
+  });
+  
+  // Close menu when clicking overlay
+  mobileOverlay.addEventListener('click', closeMobileMenu);
+  
+  // Close menu when clicking a navigation link
+  sidebar.addEventListener('click', function(e) {
+    if (e.target.closest('.sidebar-link')) {
+      // Small delay to allow navigation to complete
+      setTimeout(closeMobileMenu, 100);
+    }
+  });
+  
+  // Close menu when window is resized to desktop
+  window.addEventListener('resize', function() {
+    if (window.innerWidth > 768) {
+      closeMobileMenu();
+    }
+  });
+}
+
+function openMobileMenu() {
+  const mobileToggle = document.getElementById('mobileMenuToggle');
+  const sidebar = document.getElementById('sidebar');
+  const mobileOverlay = document.getElementById('mobileOverlay');
+  
+  sidebar.classList.add('mobile-open');
+  mobileOverlay.classList.add('active');
+  mobileToggle.classList.add('active');
+  
+  // Prevent body scroll when menu is open
+  document.body.style.overflow = 'hidden';
+}
+
+function closeMobileMenu() {
+  const mobileToggle = document.getElementById('mobileMenuToggle');
+  const sidebar = document.getElementById('sidebar');
+  const mobileOverlay = document.getElementById('mobileOverlay');
+  
+  sidebar.classList.remove('mobile-open');
+  mobileOverlay.classList.remove('active');
+  mobileToggle.classList.remove('active');
+  
+  // Restore body scroll
+  document.body.style.overflow = '';
+}
+
+// Add to your existing initializeApp function
+function initializeApp() {
+  console.log('Starting app initialization...');
+  
+  setupNavigation();
+  loadProjects();
+  updateCurrentDate();
+  setupAllEventListeners();
+  
+  // Add this line
+  initializeMobileMenu();
+  
+  setTimeout(() => {
+    initializeCalendar();
+  }, 200);
+  
+  DependencyManager.init();
+  GlobalSearch.init();
+  Notifications.init();
+  CommandPalette.init();
+  
+  setTimeout(() => {
+    renderDashboard();
+  }, 100);
+  
+  console.log('App initialization complete');
+}
 
